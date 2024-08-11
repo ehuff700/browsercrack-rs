@@ -2,5 +2,15 @@
 name = "browsercrack-rs"
 version = "0.1.0"
 edition = "2021"
+authors = ["Infamous <ehuff007@gmail.com>"]
+description = "A small library to crack browser passwords"
+readme = "README.MD"
+repository = "https://github.com/ehuff700/browsercrack-rs"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
+
+[features]
+windows = []
+macos = []
+linux = []
