@@ -9,6 +9,16 @@ pub(super) mod extra {
         bytes: Vec<u16>,
     }
 
+    impl OsString {
+        pub fn new(bytes: Vec<u16>) -> Self {
+            OsString { bytes }
+        }
+
+        /// Pushes a string to the end of the buffer.
+        pub fn push_str(&mut self, s: &str) {
+            self.bytes.extend(s.encode_utf16());
+        }
+    }
     impl core::fmt::Display for OsString {
         fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             let string = String::from_utf16_lossy(&self.bytes);
