@@ -2,6 +2,6 @@
 extern crate alloc;
 
 mod error;
-mod os;
+pub mod os;
 mod traits;
 pub use error::*;
