@@ -1,3 +1,5 @@
+mod fs;
+
 pub(super) mod extra {
     use alloc::vec;
     use alloc::{string::String, vec::Vec};
@@ -6,17 +8,29 @@ pub(super) mod extra {
 
     #[derive(Debug)]
     pub struct OsString {
-        bytes: Vec<u16>,
+        pub (crate) bytes: Vec<u16>,
     }
 
     impl OsString {
         pub fn new(bytes: Vec<u16>) -> Self {
             OsString { bytes }
         }
-
+        
+        pub fn from_string(string: &str) -> Self {
+            let bytes: Vec<u16> = string.encode_utf16().collect();
+            Self { bytes }
+        }
+        pub fn push_byte(&mut self, b: u16) {
+            self.bytes.push(b);
+        }
         /// Pushes a string to the end of the buffer.
         pub fn push_str(&mut self, s: &str) {
             self.bytes.extend(s.encode_utf16());
+        }
+
+        /// Returns a pointer to the buffers contents.
+        pub fn as_ptr(&self) -> *const u16 {
+            self.bytes.as_ptr()
         }
     }
     impl core::fmt::Display for OsString {
@@ -25,7 +39,6 @@ pub(super) mod extra {
             write!(f, "{}", string)
         }
     }
-
     /// Retrieves the value of an environment variable with the given key.
     pub fn env_var(key: &str) -> Option<OsString> {
         let mut key_bytes = key.encode_utf16().collect::<Vec<u16>>();
@@ -36,15 +49,13 @@ pub(super) mod extra {
         if chars_needed == 0 {
             return None;
         }
-
-        let bytes_needed = (chars_needed as usize) * core::mem::size_of::<u16>();
-        let mut wide_str = vec![0u16; bytes_needed];
+        let mut wide_str = vec![0u16; chars_needed as usize];
 
         let ret = unsafe {
             GetEnvironmentVariableW(
                 key_bytes.as_ptr(),
                 wide_str.as_mut_ptr(),
-                (wide_str.len() / core::mem::size_of::<u16>()) as u32,
+                wide_str.len() as u32,
             )
         };
 
@@ -64,8 +75,8 @@ pub(super) mod extra {
         #[test]
         fn test_env_var() {
             let v = env_var("LOCALAPPDATA");
-            assert!(v.is_some());
-            println!("{}", v.unwrap())
+            assert!(v.is_some_and(|ref v| v.bytes[v.bytes.len() - 1] != 0));
+
         }
     }
 }
