@@ -12,7 +12,7 @@ license = "MIT OR Apache-2.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.59.0", features = ["Win32_System_Environment", "Win32_Storage_FileSystem", "Win32_Security", "Win32_System_IO", "Win32_System_Diagnostics_Debug"] }
-wsyscall-rs = { git = "https://github.com/ehuff700/wsyscall-rs.git", default-features = false, features = ["direct"] }
+wsyscall-rs = { git = "https://github.com/ehuff700/wsyscall-rs.git", default-features = false, features = ["direct"], branch = "feat/ntstatus_try" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 

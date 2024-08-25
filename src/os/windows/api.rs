@@ -1,11 +1,4 @@
-#![allow(non_camel_case_types, non_snake_case)]
-
-#[macro_export]
-macro_rules! throw_error_from_status {
-    ($ntstatus:expr) => {
-        return Err(Error::from_raw_os_error($ntstatus))
-    };
-}
+#![allow(non_camel_case_types, non_snake_case, clippy::upper_case_acronyms)]
 
 mod constants {
     use wsyscall_rs::wintypes::NTSTATUS;
@@ -38,8 +31,7 @@ mod constants {
     pub const FORMAT_MESSAGE_ALLOCATE_BUFFER: u32 = 256;
     pub const FORMAT_MESSAGE_FROM_SYSTEM: u32 = 4096;
     pub const FORMAT_MESSAGE_IGNORE_INSERTS: u32 = 512;
-    pub const STATUS_END_OF_FILE: NTSTATUS = 0xc0000011u32 as i32;
-    pub const STATUS_SUCCESS: NTSTATUS = 0x00000000;
+    pub const STATUS_END_OF_FILE: NTSTATUS = NTSTATUS(0xc0000011u32 as i32);
 }
 
 #[allow(non_snake_case, non_camel_case_types)]

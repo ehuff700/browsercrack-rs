@@ -5,9 +5,7 @@ use alloc::{
     vec::Vec,
 };
 
-use wsyscall_rs::wintypes::{WindowsString, UNICODE_STRING};
-
-use crate::{throw_error_from_status, Error};
+use wsyscall_rs::wintypes::{WindowsString, STATUS_SUCCESS, UNICODE_STRING};
 
 use super::*;
 
@@ -41,7 +39,7 @@ pub fn read_to_string(file_path: &WindowsString) -> crate::Result<String> {
             core::ptr::null_mut(),
         );
     };
-    let create_result = unsafe {
+    unsafe {
         NtCreateFile(
             &mut *handle as *mut _,
             FILE_GENERIC_READ,
@@ -55,12 +53,9 @@ pub fn read_to_string(file_path: &WindowsString) -> crate::Result<String> {
             core::ptr::null_mut(),
             0,
         )
-    };
+    }?;
 
-    if create_result != 0 {
-        throw_error_from_status!(create_result);
-    }
-
+    // TODO: reserve size of the file upfront (find which API call is needed??)
     // Creates a variable to store the bytes from the file
     let mut file_bytes = Vec::with_capacity(1024);
 
@@ -92,7 +87,7 @@ pub fn read_to_string(file_path: &WindowsString) -> crate::Result<String> {
                 file_bytes.extend_from_slice(&buffer[0..bytes_read]);
             }
             STATUS_END_OF_FILE => break,
-            _ => throw_error_from_status!(read_result),
+            _ => read_result?,
         };
     }
     Ok(String::from_utf8_lossy(&file_bytes).to_string())
@@ -124,7 +119,7 @@ pub fn write(path: &WindowsString, contents: impl AsRef<[u8]>) -> crate::Result<
             core::ptr::null_mut(),
         );
     };
-    let create_result = unsafe {
+    unsafe {
         NtCreateFile(
             &mut *handle as *mut _,
             FILE_GENERIC_WRITE,
@@ -138,13 +133,9 @@ pub fn write(path: &WindowsString, contents: impl AsRef<[u8]>) -> crate::Result<
             core::ptr::null_mut(),
             0,
         )
-    };
+    }?;
 
-    if create_result != 0 {
-        throw_error_from_status!(create_result);
-    }
-
-    let write_result = unsafe {
+    unsafe {
         NtWriteFile(
             *handle,
             core::ptr::null_mut(),
@@ -156,11 +147,8 @@ pub fn write(path: &WindowsString, contents: impl AsRef<[u8]>) -> crate::Result<
             core::ptr::null_mut(),
             core::ptr::null_mut(),
         )
-    };
+    }?;
 
-    if write_result != 0 {
-        throw_error_from_status!(write_result);
-    }
     Ok(())
 }
 #[cfg(test)]
@@ -170,7 +158,7 @@ mod tests {
 
     use wsyscall_rs::SusGetEnvironmentVariable;
 
-    use crate::windows_error::WindowsError;
+    use crate::{windows_error::WindowsError, Error};
 
     use super::*;
 

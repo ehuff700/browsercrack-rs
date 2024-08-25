@@ -232,7 +232,7 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 [[package]]
 name = "wsyscall-rs"
 version = "0.1.0"
-source = "git+https://github.com/ehuff700/wsyscall-rs.git#c11acc77b4bb2a8dcc459d64d78f04857d6abc05"
+source = "git+https://github.com/ehuff700/wsyscall-rs.git?branch=feat/ntstatus_try#d099880b50cab99015a40df041e5df22c5e34bc3"
 dependencies = [
  "once_cell",
  "rand",

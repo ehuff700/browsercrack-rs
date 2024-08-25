@@ -1,4 +1,3 @@
-use crate::error::windows_error::WindowsError;
 use crate::os::*;
 
 pub type Result<T> = core::result::Result<T, Error>;
@@ -7,7 +6,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 /// Error type for the browsercrack-rs library.
 pub enum Error {
     #[cfg(target_os = "windows")]
-    OsError(WindowsError),
+    OsError(windows_error::WindowsError),
 }
 
 impl Error {
@@ -16,14 +15,18 @@ impl Error {
         #[cfg(target_os = "windows")]
         {
             let last_error_code = unsafe { GetLastError() };
-            Self::OsError(WindowsError::new(last_error_code))
+            Self::OsError(windows_error::WindowsError::new(last_error_code))
         }
     }
 
     /// Constructs a new `Error` from a raw operating system error code.
     pub fn from_raw_os_error(code: i32) -> Self {
-        let rtl_to_win32 = unsafe { RtlNtStatusToDosError(code) };
-        Self::OsError(WindowsError::new(rtl_to_win32))
+        #[cfg(target_os = "windows")]
+        {
+            use wsyscall_rs::wintypes::NTSTATUS;
+            let rtl_to_win32 = unsafe { RtlNtStatusToDosError(NTSTATUS(code)) };
+            Self::OsError(windows_error::WindowsError::new(rtl_to_win32))
+        }
     }
 }
 impl core::error::Error for Error {}
@@ -42,6 +45,16 @@ pub(crate) mod windows_error {
         FORMAT_MESSAGE_IGNORE_INSERTS,
     };
     use alloc::string::String;
+    use wsyscall_rs::wintypes::NTERROR;
+
+    use super::Error;
+
+    /* From implementation to convert from an NTERROR to this crate's error. */
+    impl From<NTERROR> for Error {
+        fn from(value: NTERROR) -> Self {
+            Error::from_raw_os_error(value.0)
+        }
+    }
 
     #[derive(PartialEq)]
     pub struct WindowsError(u32);
