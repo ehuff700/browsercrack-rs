@@ -2,8 +2,8 @@
 name = "browsercrack-rs"
 version = "0.1.0"
 edition = "2021"
-authors = ["Infamous <ehuff007@gmail.com>"]
-description = "A small library to crack browser passwords"
+authors = ["Infamous <ehuff007@gmail.com>", "Loki-s13 <loki.sl1133@gmail.com>"]
+description = "A no-std compatible, cross-platform rust library to crack browser passwords."
 readme = "README.MD"
 repository = "https://github.com/ehuff700/browsercrack-rs"
 license = "MIT OR Apache-2.0"
@@ -12,6 +12,7 @@ license = "MIT OR Apache-2.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.59.0", features = ["Win32_System_Environment", "Win32_Storage_FileSystem", "Win32_Security", "Win32_System_IO", "Win32_System_Diagnostics_Debug"] }
+wsyscall-rs = { git = "https://github.com/ehuff700/wsyscall-rs.git", default-features = false, features = ["direct"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 
