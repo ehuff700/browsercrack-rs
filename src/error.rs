@@ -1,13 +1,16 @@
+use alloc::boxed::Box;
+
 use crate::os::*;
 
 pub type Result<T> = core::result::Result<T, Error>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 /// Error type for the browsercrack-rs library.
 pub enum Error {
     #[cfg(target_os = "windows")]
     OsError(windows_error::WindowsError),
     NoBrowsersAvailable,
+    JsonParseError(serde_json::Error),
 }
 
 impl Error {
@@ -36,7 +39,14 @@ impl core::fmt::Display for Error {
         match self {
             Self::OsError(win_error) => write!(f, "{}", win_error),
             Self::NoBrowsersAvailable => write!(f, "no browsers available"),
+            Self::JsonParseError(serde_error) => write!(f, "{}", serde_error),
         }
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(value: serde_json::Error) -> Self {
+        Self::JsonParseError(value)
     }
 }
 

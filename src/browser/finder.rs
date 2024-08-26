@@ -64,7 +64,7 @@ mod tests {
         assert!(browser_finder.is_ok());
         let browser_finder = browser_finder.unwrap();
         for browser in browser_finder.iter() {
-            std::println!("{:?}", browser)
+            std::println!("{:?}", browser);
         }
     }
 }
