@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 
 use crate::browser::{Cookie, Login};
 
-pub trait Browser {
+pub trait Browser: core::fmt::Debug {
     /// Queries the browser db for all of the logins.
     fn logins(&self) -> crate::Result<Vec<Login>>;
 

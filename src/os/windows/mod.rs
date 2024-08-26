@@ -1,4 +1,4 @@
 mod api;
-mod fs;
+pub(super) mod fs;
 
 pub(crate) use api::*;

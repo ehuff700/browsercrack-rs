@@ -7,6 +7,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 pub enum Error {
     #[cfg(target_os = "windows")]
     OsError(windows_error::WindowsError),
+    NoBrowsersAvailable,
 }
 
 impl Error {
@@ -34,6 +35,7 @@ impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::OsError(win_error) => write!(f, "{}", win_error),
+            Self::NoBrowsersAvailable => write!(f, "no browsers available"),
         }
     }
 }

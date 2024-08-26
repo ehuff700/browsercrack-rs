@@ -23,7 +23,6 @@ mod constants {
     pub const FILE_OVERWRITE_IF: u32 = 5;
     pub const FILE_SEQUENTIAL_ONLY: u32 = 4;
     pub const FILE_SHARE_READ: u32 = 1;
-    pub const FILE_SHARE_WRITE: u32 = 2;
     pub const FILE_SYNCHRONOUS_IO_NONALERT: u32 = 0x00000020;
     pub const FILE_NON_DIRECTORY_FILE: u32 = 0x00000040;
     pub const OBJ_CASE_INSENSITIVE: u32 = 0x00000040;
@@ -62,8 +61,18 @@ mod structs {
         pub SecurityQualityOfService: *mut core::ffi::c_void,
     }
 
+    #[repr(C)]
+    pub struct FILE_BASIC_INFORMATION {
+        pub CreationTime: i64,
+        pub LastAccessTime: i64,
+        pub LastWriteTime: i64,
+        pub ChangeTime: i64,
+        pub FileAttributes: u32,
+    }
+
     #[repr(transparent)]
     #[derive(Debug)]
+    /// Custom struct to wrap windows handles returned by the Nt API, to automatically close them on Drop.
     pub struct WindowsHandle(pub(crate) HANDLE);
     impl core::ops::Deref for WindowsHandle {
         type Target = *mut core::ffi::c_void;
@@ -78,7 +87,7 @@ mod structs {
     }
     impl core::ops::Drop for WindowsHandle {
         fn drop(&mut self) {
-            unsafe { NtClose(self.0) };
+            let _ = unsafe { NtClose(self.0) };
         }
     }
 }
@@ -86,7 +95,7 @@ mod structs {
 #[allow(non_snake_case, non_camel_case_types)]
 mod functions {
     use super::constants::PIO_APC_ROUTINE;
-    use super::{CONST_PVOID, HANDLE, PVOID, ULONG};
+    use super::{CONST_PVOID, FILE_BASIC_INFORMATION, HANDLE, PVOID, ULONG};
 
     use wsyscall_rs::wintypes::NTSTATUS;
     use wsyscall_rs::{dynamic_invoke_imp, syscall};
@@ -147,13 +156,14 @@ mod functions {
         Key: *const ULONG
     ));
 
+    syscall_imp!(NtQueryAttributesFile, (ObjectAttributes: *const OBJECT_ATTRIBUTES, FileInformation: *mut FILE_BASIC_INFORMATION));
     syscall_imp!(NtClose, (Handle: HANDLE));
 
     /* ntdll.dll imports */
     dynamic_invoke_imp!("ntdll.dll", RtlInitUnicodeString, (DestinationString: *mut UNICODE_STRING, SourceString: *const u16));
     dynamic_invoke_imp!("ntdll.dll", RtlNtStatusToDosError, (Status: NTSTATUS) -> u32);
 
-    /* Kernel32.DLL imports */
+    /* kernel32.dll imports */
     dynamic_invoke_imp!("KERNEL32.DLL", FormatMessageW, (dwflags: u32, lpsource: *const core::ffi::c_void, dwmessageid: u32, dwlanguageid: u32, lpbuffer: *mut u16, nsize: u32, arguments: *const *const i8) -> u32);
     dynamic_invoke_imp!("KERNEL32.DLL", LocalFree, (hmem: *mut core::ffi::c_void) -> core::ffi::c_void);
     dynamic_invoke_imp!("KERNEL32.DLL", GetLastError, () -> u32);

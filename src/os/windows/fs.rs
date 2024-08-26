@@ -9,6 +9,36 @@ use wsyscall_rs::wintypes::{WindowsString, STATUS_SUCCESS, UNICODE_STRING};
 
 use super::*;
 
+/// Helper function to create an object name from a path.
+#[inline(always)]
+fn create_object_name(file_path: &WindowsString) -> Vec<u16> {
+    let mut path_bytes = Vec::with_capacity(4 + file_path.as_bytes().len() + 1);
+    path_bytes.extend("\\??\\".encode_utf16());
+    path_bytes.extend(file_path.as_bytes());
+    path_bytes.push(0);
+    path_bytes
+}
+
+/// Returns true if a file exists at the given path, else false.
+pub fn path_exists(file_path: &WindowsString) -> bool {
+    let mut file_info = unsafe { core::mem::zeroed::<FILE_BASIC_INFORMATION>() };
+    let mut oa = unsafe { core::mem::zeroed::<OBJECT_ATTRIBUTES>() };
+    let mut unicode_string = unsafe { core::mem::zeroed::<UNICODE_STRING>() };
+    let path_bytes = create_object_name(file_path);
+    unsafe {
+        RtlInitUnicodeString(&mut unicode_string, path_bytes.as_ptr());
+        InitializeObjectAttributes(
+            &mut oa,
+            &mut unicode_string,
+            OBJ_CASE_INSENSITIVE,
+            core::ptr::null_mut(),
+            core::ptr::null_mut(),
+        );
+    };
+    let ret = unsafe { NtQueryAttributesFile(&oa, &mut file_info) };
+    ret == STATUS_SUCCESS
+}
+
 /// Copies a file from src location to dst
 pub fn copy(src: &WindowsString, dst: &WindowsString) -> crate::Result<()> {
     let file_string = read_to_string(src)?;
@@ -24,10 +54,7 @@ pub fn read_to_string(file_path: &WindowsString) -> crate::Result<String> {
     let mut oa = unsafe { core::mem::zeroed::<OBJECT_ATTRIBUTES>() };
     let mut unicode_string = unsafe { core::mem::zeroed::<UNICODE_STRING>() };
 
-    let mut path_bytes = Vec::with_capacity(4 + file_path.as_bytes().len() + 1);
-    path_bytes.extend("\\??\\".encode_utf16());
-    path_bytes.extend(file_path.as_bytes());
-    path_bytes.push(0);
+    let path_bytes = create_object_name(file_path);
 
     unsafe {
         RtlInitUnicodeString(&mut unicode_string, path_bytes.as_ptr());
@@ -58,14 +85,13 @@ pub fn read_to_string(file_path: &WindowsString) -> crate::Result<String> {
     // TODO: reserve size of the file upfront (find which API call is needed??)
     // Creates a variable to store the bytes from the file
     let mut file_bytes = Vec::with_capacity(1024);
+    let mut buffer = [0u8; 1024];
 
     // Loops through the specified file, reads and stores file bytes to the buffer variable (this buffer is overwritten everytime the loop runs).
     // If the returned value is not 0 or end of file, an error would be handled.
     // The bytes read from the file will be appended to the file_bytes vector.
     // If the file returns a STATUS_END_OF_FILE, the loop will end.
     loop {
-        let mut io_status = unsafe { core::mem::zeroed::<IO_STATUS_BLOCK>() };
-        let mut buffer = [0u8; 1024];
         let mut bytes_read = 0;
         let read_result = unsafe {
             NtReadFile(
@@ -104,10 +130,7 @@ pub fn write(path: &WindowsString, contents: impl AsRef<[u8]>) -> crate::Result<
     let mut oa = unsafe { core::mem::zeroed::<OBJECT_ATTRIBUTES>() };
     let mut unicode_string = unsafe { core::mem::zeroed::<UNICODE_STRING>() };
 
-    let mut path_bytes = Vec::with_capacity(4 + path.as_bytes().len() + 1);
-    path_bytes.extend("\\??\\".encode_utf16());
-    path_bytes.extend(path.as_bytes());
-    path_bytes.push(0);
+    let path_bytes = create_object_name(path);
 
     unsafe {
         RtlInitUnicodeString(&mut unicode_string, path_bytes.as_ptr());
@@ -193,5 +216,14 @@ mod tests {
         let ret = copy(&local_state, &dst);
         assert!(ret.is_ok());
         std::fs::remove_file(std::path::Path::new(dst_str)).unwrap();
+    }
+
+    #[test]
+    fn test_path_exists() {
+        let mut app_data = SusGetEnvironmentVariable("LOCALAPPDATA").unwrap();
+        assert!(path_exists(&app_data));
+
+        app_data.push_str("\\non_existent_directory");
+        assert!(!path_exists(&app_data));
     }
 }

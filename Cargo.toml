@@ -9,10 +9,11 @@ repository = "https://github.com/ehuff700/browsercrack-rs"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
+serde_json = { version = "1.0.127", default-features = false, features = ["alloc"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.59.0", features = ["Win32_System_Environment", "Win32_Storage_FileSystem", "Win32_Security", "Win32_System_IO", "Win32_System_Diagnostics_Debug"] }
-wsyscall-rs = { git = "https://github.com/ehuff700/wsyscall-rs.git", default-features = false, features = ["direct"], branch = "feat/ntstatus_try" }
+wsyscall-rs = { git = "https://github.com/ehuff700/wsyscall-rs.git", default-features = false, features = ["direct"]}
 
 [target.'cfg(target_os = "macos")'.dependencies]
 
